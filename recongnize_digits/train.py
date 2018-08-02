@@ -93,5 +93,9 @@ while True:
             fetch_list=[acc_layer],
         )
         avg_acc.update(acc, 1)
-    print(avg_acc.eval())
-    raw_input('pause')
+    print('Final acc: %f' % (avg_acc.eval(),))
+    if avg_acc.eval() > 0.99:
+        break
+
+fluid.io.save_inference_model('saved_model', ['img'], [prediction_layer], exe)
+print('Model "saved_model" saved.')
