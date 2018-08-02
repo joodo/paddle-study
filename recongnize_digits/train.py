@@ -52,7 +52,11 @@ prediction_layer = fluid.layers.fc(
 
 cost_layer = fluid.layers.cross_entropy(input=prediction_layer, label=label_layer)
 avg_cost_layer = fluid.layers.mean(cost_layer)
-acc_layer = fluid.layers.accuracy(input=prediction_layer, label=label_layer)
+
+batch_size_layer = fluid.layers.create_tensor(dtype='int64')
+acc_layer = fluid.layers.accuracy(input=prediction_layer,
+                                  label=label_layer,
+                                  total=batch_size_layer)
 
 
 # test program
@@ -87,12 +91,12 @@ while True:
 
     avg_acc = fluid.metrics.Accuracy()
     for data in test_reader():
-        acc, = exe.run(
+        acc, weight = exe.run(
             inference_program,
             feed=feeder.feed(data),
-            fetch_list=[acc_layer],
+            fetch_list=[acc_layer, batch_size_layer],
         )
-        avg_acc.update(acc, 1)
+        avg_acc.update(acc, weight)
     print('Final acc: %f' % (avg_acc.eval(),))
     if avg_acc.eval() > 0.99:
         break

@@ -11,10 +11,10 @@ def  load_image(file):
     im = Image.open(file).convert('L')
     im = im.resize((28, 28), Image.ANTIALIAS)
     im = np.array(im).reshape(1, 1, 28, 28).astype(np.float32)
-    im = im /255.0 * 2.0 - 1.0
+    im = im / 255.0 * 2.0 - 1.0
     return im
 
-img = load_image('timg.jpeg')
+img = load_image('timg.png')
 
 
 # Load Model
@@ -36,4 +36,4 @@ with fluid.scope_guard(inference_scope):
         fetch_list = fetch_targets,
     )
     results = np.argsort(-results[0])
-    print(results)
+    print(results[0][0])
