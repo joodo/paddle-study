@@ -34,6 +34,9 @@ def optimizer_program():
 
 
 use_cuda = False
+with open('../use_gpu') as f:
+	if int(f.read()) != 0:
+		use_cuda = True
 place = fluid.CUDAPlace(0) if use_cuda else fluid.CPUPlace()
 
 

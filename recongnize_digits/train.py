@@ -4,16 +4,16 @@ import paddle.fluid as fluid
 
 # Reader
 
-BATCH_SIZE = 20
+BATCH_SIZE = 64
 
 train_reader = paddle.batch(
     paddle.reader.shuffle(paddle.dataset.mnist.train(), buf_size=500),
-    batch_size=64,
+    batch_size=BATCH_SIZE,
 )
 
 test_reader = paddle.batch(
     paddle.dataset.mnist.test(),
-    batch_size=64,
+    batch_size=BATCH_SIZE,
 )
 
 
@@ -33,12 +33,12 @@ conv_pool_1_layer = fluid.nets.simple_img_conv_pool(
     pool_stride=2,
     act='relu',
 )
-norm_1_layer = fluid.layers.batch_norm(conv_pool_1_layer)
+conv_pool_1_layer = fluid.layers.batch_norm(conv_pool_1_layer)
 
 conv_pool_2_layer = fluid.nets.simple_img_conv_pool(
-    input=norm_1_layer,
+    input=conv_pool_1_layer,
     filter_size=5,
-    num_filters=20,
+    num_filters=50,
     pool_size=2,
     pool_stride=2,
     act='relu',
@@ -65,9 +65,13 @@ optimizer.minimize(avg_cost_layer)
 
 
 # Exe
-place = fluid.CPUPlace()
+use_cuda = False
+with open('../use_gpu') as f:
+	if int(f.read()) != 0:
+		use_cuda = True
+place = fluid.CUDAPlace(0) if use_cuda else fluid.CPUPlace()
 exe = fluid.Executor(place)
-exe.run(fluid.default_main_program())
+exe.run(fluid.default_startup_program())
 
 
 # Feeder
@@ -76,16 +80,18 @@ feeder = fluid.DataFeeder(place=place, feed_list=[img_layer, label_layer])
 
 # Train!!
 while True:
-    for data in train_reader():
-        exe.run(feed=feeder.feed(data), fetch_list=[avg_cost_layer, acc_layer])
+    for batch_id, data in enumerate(train_reader()):
+        acc, = exe.run(feed=feeder.feed(data), fetch_list=[acc_layer])
+        if batch_id % 100 == 0:
+			print('batch %d, acc %f' % (batch_id, acc))
 
     avg_acc = fluid.metrics.Accuracy()
     for data in test_reader():
         acc, = exe.run(
             inference_program,
             feed=feeder.feed(data),
-            feed_list=[acc_layer],
+            fetch_list=[acc_layer],
         )
-        avg_acc.ipdate(acc, 1)
+        avg_acc.update(acc, 1)
     print(avg_acc.eval())
     raw_input('pause')
