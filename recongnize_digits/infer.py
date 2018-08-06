@@ -26,7 +26,7 @@ with open('../use_gpu') as f:
 place = fluid.CUDAPlace(0) if use_cuda else fluid.CPUPlace()
 exe = fluid.Executor(place)
 
-inference_scope = fluid.core.Scope()
+inference_scope = fluid.Scope()
 with fluid.scope_guard(inference_scope):
     [inference_program, feed_target_names,fetch_targets] = \
         fluid.io.load_inference_model('saved_model', exe)
