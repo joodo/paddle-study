@@ -1,5 +1,3 @@
-import os
-
 import paddle.fluid as fluid
 import numpy as np
 from PIL import Image
